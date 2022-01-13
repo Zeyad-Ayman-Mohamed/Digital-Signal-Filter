@@ -1,0 +1,976 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <title>Digital Filter Design</title>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+    <title>Chart.js Drag Data Points Plugin</title>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/3.6.0/chart.min.js"></script>
+    <script src="chartjs-plugin-dragdata.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/socket.io/4.0.1/socket.io.js" integrity="sha512-q/dWJ3kcmjBLU4Qc47E4A9kTB4m3wuTY7vkFJDTZKjTs8jhyGQnaUrxa0Ytd0ssMZhbNua9hE+E7Qv1j+DyZwA==" crossorigin="anonymous"></script>
+    <script src="{{url_for('static', filename='chartjs-plugin-dragdata.min.js')}}"></script>
+
+
+    <style>
+    html,body{
+      margin: 0;
+      padding: 0;
+    }
+    canvas {
+      background-color : #eee;
+      position: absolute;
+      margin: auto;
+      top: 0;
+      right: 0;
+      bottom: 0;
+      left: 0;
+    }
+    </style>
+  </head>
+  <body>
+    <h1>Z Plot</h1>
+    <div style = "position:relative; left:-500px; top:500px;">
+    <canvas id="chartJSContainer" style="height: 600px; width: 600px;"></canvas>
+    </div>
+    
+    <div style = "position:relative; left:300px; top:350px;" >
+      <canvas id="chartJSContainer1" style="height: 300px; width: 900px;"></canvas>
+      </div>
+
+    <div style = "position:relative; left:300px; top:650px;" >
+    <canvas id="chartJSContainer2" style="height: 300px; width: 900px;"></canvas>
+    </div>
+
+    <div style = "position:relative; left:200px; top:1175px;" >
+      
+      <label for="AllPass" style = "position:relative; left:0px; top:-100px">Choose an All-Pass Filter:</label>
+      <select style = "position:relative; left:-0px; top:-100px" name="AllPass" id="AllPass">
+        <optgroup label="alpha= ">
+          <option value="0.2">0.2</option>
+          <option value="0.4">0.4</option>
+          <option value="0.6">0.6</option>
+          <option value="0.8">0.8</option>
+          <option value="1">1</option>
+          <option value="2">2</option>
+        </optgroup>
+      </select>
+      
+      <label for="AnotherAllPass" style = "position:relative; left:-225px; top:0px">Or Enter Another:</label>
+      <input style = "position:relative; left:-225px; top:0px" type="text" id="AnotherAllPass" name="AnotherAllPass">
+      <button style = "position:relative; left:-520px; top:100px" >Apply</button>
+      <button> </button>
+
+      <canvas id="chartJSContainerAllPass" style="height: 500px; width: 800px;"></canvas>
+      </div>
+    
+   <div style = "position:relative;left:-450px; top:1800px;" >
+      <canvas id="chartJSContainer3" style="height: 500px; width: 800px;"></canvas>
+      </div> 
+      
+      <div style = "position:relative;left:450px; top:1800px;" >
+        <canvas id="chartJSContainer4" style="height: 500px; width: 800px;"></canvas>
+        </div>
+
+        
+    <button onclick='AddBubble()'>Add Zero</button>
+    <button onclick='AddCross()'>Add Pole</button>
+    <button onclick='ClearAll()'>Clear All</button>
+    <button onclick='ClearAllZeroes()'>Clear All Zeroes</button>
+    <button onclick='ClearAllPoles()'>Clear All Poles</button>
+    <button onclick='DeleteSelected()'>Delete Selected Zero/Pole</button>
+    <input type="checkbox" onchange= SwitchConjugates() name= AddConjugates>
+    <label for="AddConjugates">AddConjugates</label>
+    <button onclick='PrintPoles()'>Print Poles</button>
+    <button onclick='PrintZeroes()'>Print Zeroes</button>
+    <button onclick='StartDrwaing()'>Start </button>
+
+    <script>
+      var AllPassX= [1,2,3,4,5]
+      var AllPassY= []
+
+      var FilterMagX=[1,2,3,4,5]
+      var FilterMagY=[]
+      var FilterPhaseX=[1,2,3,4,5]
+      var FilterPhaseY=[]
+      var InputX=[1,2,3,4,5]
+      var InputY=[]
+      var OutputX=[1,2,3,4,5]
+      var OutputY=[]
+
+      var ToBeDeletedIndexInDataset
+      var PolePositions=[] //{x,y,index in datasets}
+      var ZeroesPositions=[]
+      var ConjugateFlag = 0
+      var ConjugateOfSelectedIndex=-1
+      var InputFlag = 0
+      const socket = new WebSocket('ws://' + location.host + '/echo');
+    //converting arraies to dictoineries and sending them to back
+   
+    
+
+    //socket.send(polesdata)
+    socket.addEventListener('message', function (event) {
+
+
+    //console.log('Message 1', event.data);
+    obj = JSON.parse(event.data);
+    console.log('Message 2', obj);
+    var w =[]
+    var Hdb=[]
+    var phi=[]
+    var w_allpass=[]
+    var Hdb_allpass=[]
+    var phi_allpass=[]
+    var FilteredReal=[]
+    var FilteredImag=[]
+    var FilteredAllPassReal=[]
+    var FilteredAllPassImag=[]
+    var time=[]
+    var input=[]
+    w=obj["w"]
+    Hdb=obj["H_dB"]
+    phi=obj["phi"]
+    w_allpass=obj["w_allpass"]
+    Hdb_allpass=obj["H_dB_allpass"]
+    phi_allpass=obj["phi_allpass"]
+    FilteredReal=obj["RealFiltered"]
+    FilteredImag=obj["ImagineryFiltered"]
+    FilteredAllPassReal=obj["RealFilteredAllPass"]
+    FilteredAllPassImag=obj["ImaginaryFilteredAllPass"]
+    time=obj["Time"]
+    input=obj["InputSignal"]
+    FilterMagY=Hdb
+    FilterMagX=w
+    FilterPhaseY=phi
+    FilterPhaseX=w
+    InputY=input
+    InputX=time
+    OutputY=FilteredReal
+    OutputX=time
+    console.log(w)
+    console.log(Hdb)
+    MagnitudeandPhaseDraw()
+    if(InputFlag==1){
+      InputandOutputDraw()
+    }
+     
+    });
+    function ApplyAllPass(){
+        var Alpha = document.getElementById("AnotherAllPass").value;
+        if (Alpha==""){
+          Alpha = document.getElementById("AllPass").value;
+        }
+        console.log(Alpha)
+      }
+      function StartDrwaing(){
+        InputFlag=1
+        setInterval(SendFlag,1)
+      }
+      function SwitchConjugates(){
+        if (ConjugateFlag ==0){
+          ConjugateFlag=1;
+          AddConjugates();
+        }
+        else{
+          ConjugateFlag=0;
+          DeleteConjugates();
+        }
+      }
+      function MagnitudeandPhaseDraw(){
+        console.log("hi")
+        options1.data= {
+        labels: FilterMagX,//x axis array
+        datasets: [
+        {
+            label: "Magnitude ",
+            fill: false,
+            lineTension: 0.1,
+            backgroundColor: "rgba(75,192,192,0.4)",
+            borderColor: "rgba(75,192,192,1)",
+            borderCapStyle: 'butt',
+            borderDash: [],
+            borderDashOffset: 0.0,
+            borderJoinStyle: 'miter',
+            pointBorderColor: "rgba(75,192,192,1)",
+            pointBackgroundColor: "#fff",
+            pointBorderWidth: 1,
+            pointHoverRadius: 5,
+            pointHoverBackgroundColor: "rgba(75,192,192,1)",
+            pointHoverBorderColor: "rgba(220,220,220,1)",
+            pointHoverBorderWidth: 2,
+            pointRadius: 1,
+            pointHitRadius: 10,
+            data: FilterMagY,//y axis array
+            spanGaps: true,
+        }]
+    }
+        window.test1.update()
+        
+        options2.data= {
+        labels: FilterPhaseX,//x axis array
+        datasets: [
+        {
+            label: "Phase ",
+            fill: false,
+            lineTension: 0.1,
+            backgroundColor: "rgba(75,192,192,0.4)",
+            borderColor: "rgba(75,192,192,1)",
+            borderCapStyle: 'butt',
+            borderDash: [],
+            borderDashOffset: 0.0,
+            borderJoinStyle: 'miter',
+            pointBorderColor: "rgba(75,192,192,1)",
+            pointBackgroundColor: "#fff",
+            pointBorderWidth: 1,
+            pointHoverRadius: 5,
+            pointHoverBackgroundColor: "rgba(75,192,192,1)",
+            pointHoverBorderColor: "rgba(220,220,220,1)",
+            pointHoverBorderWidth: 2,
+            pointRadius: 1,
+            pointHitRadius: 10,
+            data: FilterPhaseY,//y axis array
+            spanGaps: true,
+        }]
+    }
+        window.test2.update()
+      }
+      function InputandOutputDraw(){
+        console.log("hi")
+        options3.data= {
+        labels: InputX,//x axis array
+        datasets: [
+        {
+            label: "Magnitude ",
+            fill: false,
+            lineTension: 0.1,
+            backgroundColor: "rgba(75,192,192,0.4)",
+            borderColor: "rgba(75,192,192,1)",
+            borderCapStyle: 'butt',
+            borderDash: [],
+            borderDashOffset: 0.0,
+            borderJoinStyle: 'miter',
+            pointBorderColor: "rgba(75,192,192,1)",
+            pointBackgroundColor: "#fff",
+            pointBorderWidth: 1,
+            pointHoverRadius: 5,
+            pointHoverBackgroundColor: "rgba(75,192,192,1)",
+            pointHoverBorderColor: "rgba(220,220,220,1)",
+            pointHoverBorderWidth: 2,
+            pointRadius: 1,
+            pointHitRadius: 10,
+            data: InputY,//y axis array
+            spanGaps: true,
+        }]
+    }
+        window.test3.update()
+        
+        options4.data= {
+        labels: OutputX,//x axis array
+        datasets: [
+        {
+            label: "Magnitude ",
+            fill: false,
+            lineTension: 0.1,
+            backgroundColor: "rgba(75,192,192,0.4)",
+            borderColor: "rgba(75,192,192,1)",
+            borderCapStyle: 'butt',
+            borderDash: [],
+            borderDashOffset: 0.0,
+            borderJoinStyle: 'miter',
+            pointBorderColor: "rgba(75,192,192,1)",
+            pointBackgroundColor: "#fff",
+            pointBorderWidth: 1,
+            pointHoverRadius: 5,
+            pointHoverBackgroundColor: "rgba(75,192,192,1)",
+            pointHoverBorderColor: "rgba(220,220,220,1)",
+            pointHoverBorderWidth: 2,
+            pointRadius: 1,
+            pointHitRadius: 10,
+            data: OutputY,//y axis array
+            spanGaps: true,
+        }]
+    }
+        window.test4.update()
+       
+      }
+      function DrawAllPass(){
+        console.log("hi")
+        optionsAllPass.data= {
+        labels: AllPassX,//x axis array
+        datasets: [
+        {
+            label: "Magnitude ",
+            fill: false,
+            lineTension: 0.1,
+            backgroundColor: "rgba(75,192,192,0.4)",
+            borderColor: "rgba(75,192,192,1)",
+            borderCapStyle: 'butt',
+            borderDash: [],
+            borderDashOffset: 0.0,
+            borderJoinStyle: 'miter',
+            pointBorderColor: "rgba(75,192,192,1)",
+            pointBackgroundColor: "#fff",
+            pointBorderWidth: 1,
+            pointHoverRadius: 5,
+            pointHoverBackgroundColor: "rgba(75,192,192,1)",
+            pointHoverBorderColor: "rgba(220,220,220,1)",
+            pointHoverBorderWidth: 2,
+            pointRadius: 1,
+            pointHitRadius: 10,
+            data: AllPassY,//y axis array
+            spanGaps: true,
+        }]
+    }
+    window.testAllPass.update()
+      }
+  function circle(radius, steps, centerX, centerY){
+    var xValues = [centerX];
+    var yValues = [centerY];
+   for (var i = 0; i < steps; i++) {
+    xValues[i] = (centerX + radius * Math.cos(2 * Math.PI * i / steps));
+    yValues[i] = (centerY + radius * Math.sin(2 * Math.PI * i / steps));
+}
+}
+function PrintPoles(){
+  datay.push(datay[datay.length-1]+1)
+  options2.data= {
+        labels: datax,
+        datasets: [
+        {
+            label: "Digital Filter",
+            fill: false,
+            lineTension: 0.1,
+            backgroundColor: "rgba(75,192,192,0.4)",
+            borderColor: "rgba(75,192,192,1)",
+            borderCapStyle: 'butt',
+            borderDash: [],
+            borderDashOffset: 0.0,
+            borderJoinStyle: 'miter',
+            pointBorderColor: "rgba(75,192,192,1)",
+            pointBackgroundColor: "#fff",
+            pointBorderWidth: 1,
+            pointHoverRadius: 5,
+            pointHoverBackgroundColor: "rgba(75,192,192,1)",
+            pointHoverBorderColor: "rgba(220,220,220,1)",
+            pointHoverBorderWidth: 2,
+            pointRadius: 1,
+            pointHitRadius: 10,
+            data: datay,
+            spanGaps: true,
+        }]
+    }
+  window.test2.update()
+  for(var i= 0; i<PolePositions.length;i++) {
+          console.log(PolePositions[i])
+        }
+        
+}
+//send data functions
+function SendDataToPython(){
+  let ZerosandPolesdata = JSON.stringify({
+      type: "zeros",
+      value: ZeroesPositions,
+      type2:"poles",
+      value2:PolePositions,
+      type3:"a",
+      value3:PolePositions,
+      type4:"flag",
+      value4:0
+
+    })
+    //let polesdata = JSON.stringify({
+      //type: "poles",
+      //value: PolePositions
+    //})
+    socket.send(ZerosandPolesdata)
+    //MagnitudeandPhaseDraw()
+}
+function SendFlag(){
+  
+  let ZerosandPolesdata = JSON.stringify({
+      type: "zeros",
+      value: ZeroesPositions,
+      type2:"poles",
+      value2:PolePositions,
+      type3:"a",
+      value3:PolePositions,
+      type4:"flag",
+      value4:1
+
+    })
+    InputFlag=1
+    socket.send(ZerosandPolesdata)
+  
+    
+}
+function PrintZeroes(){
+  for(var i= 0; i<ZeroesPositions.length;i++) {
+          console.log(ZeroesPositions[i])
+        }
+}
+function ClearAll(){
+            if (options.data.datasets.length>400+1){
+              for(var i= options.data.datasets.length-1; i>=400+1;i--) {
+                  options.data.datasets.pop();
+                }
+              }
+              PolePositions=[]
+              ZeroesPositions=[]
+            window.test.update()
+        }
+function DeleteSelected(){
+  var polezeroflag=0
+  for (var i =PolePositions.length-1; i>=0;i--){
+    if (PolePositions[i][2]==ToBeDeletedIndexInDataset){
+      if (ConjugateFlag==1){
+        for (var j =PolePositions.length-1; j>=0;j--){
+          if ((PolePositions[i][0]==PolePositions[j][0]) && (PolePositions[i][1]==-1*PolePositions[j][1])){
+            RemovePole(j);
+          }
+        }
+      }
+      RemovePole(i);
+      polezeroflag=1
+      break;
+    }
+  }
+  if (polezeroflag==0){
+    for (var i =ZeroesPositions.length-1; i>=0;i--){
+      if (ZeroesPositions[i][2]==ToBeDeletedIndexInDataset){
+        if (ConjugateFlag==1){
+        for (var j =ZeroesPositions.length-1; j>=0;j--){
+          if ((ZeroesPositions[i][0]==ZeroesPositions[j][0]) && (ZeroesPositions[i][1]==-1*ZeroesPositions[j][1])){
+            RemoveZero(j);
+          }
+        }
+      }
+      RemoveZero(i);
+
+        break;
+      }
+    }
+  }
+  ToBeDeletedIndexInDataset=-1
+}
+
+function ClearAllZeroes(){
+    if (options.data.datasets.length>400+1){
+      for(var i= options.data.datasets.length-1; i>=400+1;i--) {
+        for(var j=ZeroesPositions.length-1;j>=0;j--){
+            if (ZeroesPositions[j][2]==i){
+              RemoveZero(j)
+            }
+        }
+        }
+      }
+    window.test.update()
+}
+
+function ClearAllPoles(){
+    if (options.data.datasets.length>400+1){
+      for(var i= options.data.datasets.length-1; i>=400+1;i--) {
+        for(var j=PolePositions.length-1;j>=0;j--){
+            if (PolePositions[j][2]==i){
+              RemovePole(j)
+            }
+        }
+        }
+      }
+    window.test.update()
+}
+
+  function RemovePole(PoleIndexInPolePositionArray){
+            var PoleIndexInDatasets=PolePositions[PoleIndexInPolePositionArray][2]
+            options.data.datasets.splice(PoleIndexInDatasets,1);
+            PolePositions.splice(PoleIndexInPolePositionArray,1)
+            for (var i=PoleIndexInPolePositionArray;i<PolePositions.length;i++){
+              PolePositions[i][2]-=1
+            }
+            for (var i= 0;i<ZeroesPositions.length;i++){
+              if (ZeroesPositions[i][2]>=PoleIndexInDatasets){
+                ZeroesPositions[i][2]-=1
+              }
+            }
+            window.test.update()
+        }
+
+        function RemoveZero(ZeroIndexInZeroPositionArray){
+          
+            var ZeroIndexInDatasets=ZeroesPositions[ZeroIndexInZeroPositionArray][2]
+            options.data.datasets.splice(ZeroIndexInDatasets,1);
+            ZeroesPositions.splice(ZeroIndexInZeroPositionArray,1)
+            for (var i=ZeroIndexInZeroPositionArray;i<ZeroesPositions.length;i++){
+              ZeroesPositions[i][2]-=1
+            }
+            for (var i= 0;i<PolePositions.length;i++){
+              if (PolePositions[i][2]>=ZeroIndexInDatasets){
+                PolePositions[i][2]-=1
+              }
+            }
+            window.test.update()
+        }
+        
+        function AddConjugates(){
+          for (var i=PolePositions.length-1;i>=0;i--){
+            if (PolePositions[i][1]!=0){
+            options.data.datasets.push( {
+              data: [{
+                x: PolePositions[i][0],
+                y: -1*PolePositions[i][1],
+                r: 8
+              }],
+              borderWidth:1,
+              backgroundColor: 'rgb(255, 0, 0, 1)',
+              pointHitRadius: 25,
+              borderColor:'rgb(255, 0, 0, 1)',
+              dragData:false
+            });
+            options.data.datasets[options.data.datasets.length-1].pointStyle='crossRot'
+            window.test.update()
+            PolePositions.push([PolePositions[i][0],-1*PolePositions[i][1],options.data.datasets.length-1])
+          }
+        }
+          for (var i= ZeroesPositions.length-1;i>=0;i--){
+            if (ZeroesPositions[i][1]!=0){
+            options.data.datasets.push( {
+              data: [{
+                x: ZeroesPositions[i][0],
+                y: -1*ZeroesPositions[i][1],
+                r: 5
+              }],
+              borderWidth: 1,
+              backgroundColor: 'rgb(255, 0, 0, 1)',
+              pointHitRadius: 25,
+              dragData:false
+            });
+            options.data.datasets[options.data.datasets.length-1].pointStyle='bubble'
+            window.test.update()
+            ZeroesPositions.push([ZeroesPositions[i][0],-1*ZeroesPositions[i][1],options.data.datasets.length-1])
+          }
+        }
+        }
+
+        function DeleteConjugates(){
+          for (var i=0;i<PolePositions.length;i++){
+            for (var j=0;j<PolePositions.length;j++){
+              if (PolePositions[i][0]==PolePositions[j][0] && PolePositions[i][1]==-1*PolePositions[j][1] ){
+                RemovePole(j);
+              }
+            }
+          }
+
+          for (var i=0;i<ZeroesPositions.length;i++){
+            for (var j=0;j<ZeroesPositions.length;j++){
+              if (ZeroesPositions[i][0]==ZeroesPositions[j][0] && ZeroesPositions[i][1]==-1*ZeroesPositions[j][1] ){
+                RemoveZero(j);
+              }
+            }
+          }
+        }
+
+        function AddBubble(){
+          if (ConjugateFlag==0){
+            options.data.datasets.push( {
+              data: [{
+                x: 0,
+                y: 0,
+                r: 5
+              }],
+              borderWidth: 1,
+              backgroundColor: 'rgb(0, 0, 0, 1)',
+              pointHitRadius: 25,
+            });
+            options.data.datasets[options.data.datasets.length-1].pointStyle='bubble'
+            window.test.update()
+            ZeroesPositions.push([0,0,options.data.datasets.length-1])
+          }
+          else{
+            alert('Please turn conjugates off')
+          }
+          
+        }
+        function AddCross(){
+          if (ConjugateFlag==0){
+            options.data.datasets.push( {
+              data: [{
+                x: 0,
+                y: 0,
+                r: 8
+              }],
+              borderWidth:1,
+              backgroundColor: 'rgb(0, 0, 0, 1)',
+              pointHitRadius: 25,
+              borderColor:'rgb(0, 0, 0, 1)',
+            });
+            options.data.datasets[options.data.datasets.length-1].pointStyle='crossRot'
+            window.test.update()
+            PolePositions.push([0,0,options.data.datasets.length-1])
+          }
+          else{
+            alert('Please turn conjugates off')
+          }
+        }
+        
+      var options = {
+        type: 'bubble',
+        legend: {
+        display: false
+    },
+        data: {
+          labels: ["Red"],
+          datasets: [
+            {
+            pointStyle: 'circle',
+              label: 'Pole1',
+              data: [{
+                // x: 0,
+                // y: 0,
+                // r: 1
+              }],
+              borderWidth: 1,
+              type: 'bubble',
+              borderColor:'rgb(0, 0, 0, 1)',
+              backgroundColor: 'rgb(0, 0, 0, 1)',
+              pointHitRadius: 25
+            }
+           
+          ]
+        },
+        options: {
+          scales: {
+            y: {
+              max: 2,
+              min:-2
+            },
+            x: {
+              max: 2,
+              min:-2
+            }
+          },
+          responsive: false,
+          onHover: function(e) {
+            const point = e.chart.getElementsAtEventForMode(e, 'nearest', { intersect: true }, false)
+            if (point.length) e.native.target.style.cursor = 'grab'
+            else e.native.target.style.cursor = 'default'
+          },
+          plugins: {
+            legend: {
+      display: false
+    },
+            dragData: {
+              round: 2,
+              dragX: true,
+              dragY:true,
+              showTooltip: true,
+              onDragStart: function(e, datasetIndex, index, value) {
+                 //console.log(value)
+                 ToBeDeletedIndexInDataset=datasetIndex
+                if (ConjugateFlag==1){
+                if (value.r==8){
+                for (var i=0;i<PolePositions.length;i++){
+                  if ( (value.y=-1*PolePositions[i][1]) && (value.x==PolePositions[i][0])){
+                        ConjugateOfSelectedIndex=i
+                  }
+                }
+              }
+
+              if (value.r==5){
+                for (var i=0;i<ZeroesPositions.length;i++){
+                  if ( (value.y=-1*ZeroesPositions[i][1]) && (value.x==ZeroesPositions[i][0])){
+                        ConjugateOfSelectedIndex=i
+                  }
+                }
+              }
+            }
+              },
+              onDrag: function(e, datasetIndex, index, value) {              
+                e.target.style.cursor = 'grabbing'
+                // console.log(e, datasetIndex, index, value)
+
+              },
+              onDragEnd: function(e, datasetIndex, index, value) {
+                e.target.style.cursor = 'default' 
+                if (ConjugateFlag==1){
+                  if (value.r==8){
+                PolePositions[ConjugateOfSelectedIndex][0]=value.x
+                PolePositions[ConjugateOfSelectedIndex][1]=-1*value.y
+                options.data.datasets[PolePositions[ConjugateOfSelectedIndex][2]].data=[{
+                x: value.x,
+                y: -1*value.y,
+                r: 8
+              }]}
+              if (value.r==5){
+                ZeroesPositions[ConjugateOfSelectedIndex][0]=value.x
+                ZeroesPositions[ConjugateOfSelectedIndex][1]=-1*value.y
+                options.data.datasets[ZeroesPositions[ConjugateOfSelectedIndex][2]].data=[{
+                x: value.x,
+                y: -1*value.y,
+                r: 5
+              }]}
+                //options.data.datasets[PolePositions[ConjugateOfSelectedIndex][2]].x=value.x
+                //options.data.datasets[PolePositions[ConjugateOfSelectedIndex][2]].y=-1*value.y
+                //console.log(options.data.datasets[PolePositions[ConjugateOfSelectedIndex][2]].x)
+                
+                window.test.update()
+                
+            }
+                if (value.r==8){
+                  for (var i=0;i<PolePositions.length;i++){
+                    if (datasetIndex==PolePositions[i][2]){
+                        PolePositions[i]=[value.x,value.y,datasetIndex]
+                        break;
+                    }
+                  }
+                }
+                else if (value.r==5){
+                  for (var i=0;i<ZeroesPositions.length;i++){
+                    if (datasetIndex==ZeroesPositions[i][2]){
+                        ZeroesPositions[i]=[value.x,value.y,datasetIndex]
+                        break;
+                    }
+                  }
+                }
+                SendDataToPython()
+                
+              }
+
+            }
+          }
+        }
+      }
+      for (var i = 0; i < 400; i++) {
+      options.data.datasets.push( {
+              data: [{
+                x: Math.cos(2 * Math.PI * i / 400),
+                y: Math.sin(2 * Math.PI * i / 400),
+                r: 1,
+              }],
+              borderWidth: 1,
+              backgroundColor: 'rgb(0, 0, 0, 1)',
+              pointHitRadius: 0,
+              type: 'bubble',
+              dragData:false,
+            });
+          }
+
+
+          var options1 ={
+    type: 'line',
+    options: {
+        animation: false
+    ,
+   /** scales: {
+            y: {
+                min: 0,
+                max: 40
+            }
+        }*/},
+    
+    data: {
+        labels: FilterMagX,
+        datasets: [
+        {
+            label: "Digital Filter Magnitude",
+            fill: false,
+            lineTension: 0.1,
+            backgroundColor: "rgba(75,192,192,0.4)",
+            borderColor: "rgba(75,192,192,1)",
+            borderCapStyle: 'butt',
+            borderDash: [],
+            borderDashOffset: 0.0,
+            borderJoinStyle: 'miter',
+            pointBorderColor: "rgba(75,192,192,1)",
+            pointBackgroundColor: "#fff",
+            pointBorderWidth: 1,
+            pointHoverRadius: 5,
+            pointHoverBackgroundColor: "rgba(75,192,192,1)",
+            pointHoverBorderColor: "rgba(220,220,220,1)",
+            pointHoverBorderWidth: 2,
+            pointRadius: 1,
+            pointHitRadius: 10,
+            data: FilterMagY,
+            spanGaps: true,
+        }]
+    }
+  }
+
+
+
+
+          var options2 ={
+    type: 'line',
+    options: {
+        animation: false
+    ,
+    /**scales: {
+            y: {
+                min: 0,
+                max: 40
+            }
+        }*/},
+    
+    data: {
+        labels: FilterPhaseX,
+        datasets: [
+        {
+            label: "Digital Filter Phase",
+            fill: false,
+            lineTension: 0.1,
+            backgroundColor: "rgba(75,192,192,0.4)",
+            borderColor: "rgba(75,192,192,1)",
+            borderCapStyle: 'butt',
+            borderDash: [],
+            borderDashOffset: 0.0,
+            borderJoinStyle: 'miter',
+            pointBorderColor: "rgba(75,192,192,1)",
+            pointBackgroundColor: "#fff",
+            pointBorderWidth: 1,
+            pointHoverRadius: 5,
+            pointHoverBackgroundColor: "rgba(75,192,192,1)",
+            pointHoverBorderColor: "rgba(220,220,220,1)",
+            pointHoverBorderWidth: 2,
+            pointRadius: 1,
+            pointHitRadius: 10,
+            data: FilterPhaseY,
+            spanGaps: true,
+        }]
+    }
+  }
+
+
+  
+  var optionsAllPass ={
+    type: 'line',
+    options: {
+        animation: false
+    ,
+    /*scales: {
+            y: {
+                min: 0,
+                max: 40
+            }
+        }*/},
+    
+    data: {
+        labels: AllPassX,
+        datasets: [
+        {
+            label: "All-Pass Filter",
+            fill: false,
+            lineTension: 0.1,
+            backgroundColor: "rgba(75,192,192,0.4)",
+            borderColor: "rgba(75,192,192,1)",
+            borderCapStyle: 'butt',
+            borderDash: [],
+            borderDashOffset: 0.0,
+            borderJoinStyle: 'miter',
+            pointBorderColor: "rgba(75,192,192,1)",
+            pointBackgroundColor: "#fff",
+            pointBorderWidth: 1,
+            pointHoverRadius: 5,
+            pointHoverBackgroundColor: "rgba(75,192,192,1)",
+            pointHoverBorderColor: "rgba(220,220,220,1)",
+            pointHoverBorderWidth: 2,
+            pointRadius: 1,
+            pointHitRadius: 10,
+            data: AllPassY,
+            spanGaps: true,
+        }]
+    }
+  }
+
+  var options4 ={
+    type: 'line',
+    options: {
+        animation: false
+    ,
+    /*scales: {
+            y: {
+                min: -1,
+                max: 4
+            }
+        }*/},
+    
+    data: {
+        labels: OutputX,
+        datasets: [
+        {
+            label: "Output Signal",
+            fill: false,
+            lineTension: 0.1,
+            backgroundColor: "rgba(75,192,192,0.4)",
+            borderColor: "rgba(75,192,192,1)",
+            borderCapStyle: 'butt',
+            borderDash: [],
+            borderDashOffset: 0.0,
+            borderJoinStyle: 'miter',
+            pointBorderColor: "rgba(75,192,192,1)",
+            pointBackgroundColor: "#fff",
+            pointBorderWidth: 1,
+            pointHoverRadius: 5,
+            pointHoverBackgroundColor: "rgba(75,192,192,1)",
+            pointHoverBorderColor: "rgba(220,220,220,1)",
+            pointHoverBorderWidth: 2,
+            pointRadius: 1,
+            pointHitRadius: 10,
+            data: OutputY,
+            spanGaps: true,
+        }]
+    }
+  }
+
+
+  var options3 ={
+    type: 'line',
+    options: {
+        animation: false
+    ,
+    scales: {
+            y: {
+                min: -1,
+                max: 4
+            }
+        }},
+    
+    data: {
+        labels: InputX,
+        datasets: [
+        {
+            label: "Input Signal",
+            fill: false,
+            lineTension: 0.1,
+            backgroundColor: "rgba(75,192,192,0.4)",
+            borderColor: "rgba(75,192,192,1)",
+            borderCapStyle: 'butt',
+            borderDash: [],
+            borderDashOffset: 0.0,
+            borderJoinStyle: 'miter',
+            pointBorderColor: "rgba(75,192,192,1)",
+            pointBackgroundColor: "#fff",
+            pointBorderWidth: 1,
+            pointHoverRadius: 5,
+            pointHoverBackgroundColor: "rgba(75,192,192,1)",
+            pointHoverBorderColor: "rgba(220,220,220,1)",
+            pointHoverBorderWidth: 2,
+            pointRadius: 1,
+            pointHitRadius: 10,
+            data: InputY,
+            spanGaps: true,
+        }]
+    }
+  }
+      var ctx = document.getElementById('chartJSContainer').getContext('2d');
+      window.test = new Chart(ctx, options);
+      var ctx1 = document.getElementById('chartJSContainer1').getContext('2d');
+      window.test1 = new Chart(ctx1, options1);
+      var ctx2 = document.getElementById('chartJSContainer2').getContext('2d');
+      window.test2 = new Chart(ctx2, options2);
+      var ctxAllPass = document.getElementById('chartJSContainerAllPass').getContext('2d');
+      window.testAllPass = new Chart(ctxAllPass, optionsAllPass);
+      var ctx3 = document.getElementById('chartJSContainer3').getContext('2d');
+      window.test3 = new Chart(ctx3, options3);
+      var ctx4 = document.getElementById('chartJSContainer4').getContext('2d');
+      window.test4 = new Chart(ctx4, options4);
+    </script>
+  </body> 
+</html>
