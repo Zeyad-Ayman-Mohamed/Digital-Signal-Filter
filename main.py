@@ -79,19 +79,18 @@ def echo(sock):
 
         zerosfromsite=data["value"]
         polesfromsite=data["value2"]
+
         wf=data["value5"]
         PointsNumber=data["value6"]
-        print(wf)
+        #print(wf)
         #print("poles",polesfromsite)
         f_s=360
-        #AllPass Addition code
-        AllPassSys = signal.TransferFunction([-wf, 1.0], [1.0, -wf])
-        AllPassZeros = AllPassSys.zeros
-        AllPassPoles = AllPassSys.poles
-        ##########
+        #AllPass Addition code old trial############################
+        #AllPassSys = signal.TransferFunction([-wf, 1.0], [1.0, -wf])
+        #AllPassZeros = AllPassSys.zeros
+        #AllPassPoles = AllPassSys.poles
+        ############################################################
         poles, zeros=PolesAndZerosAdujesment(polesfromsite, zerosfromsite)
-        poles=poles+AllPassPoles
-        zeros=zeros+AllPassZeros
         system = signal.ZerosPolesGain(zeros, poles, 1)
         system = system.to_tf()
         a = system.den
@@ -102,16 +101,26 @@ def echo(sock):
         phi = np.angle(H)  # Argument of H
         phi = np.unwrap(phi)  # Remove discontinuities
         phi *= 180 / pi
+        print("phi original",phi)
         #warp_factors=np.linspace(-0.99, 0.99, 5)
         #for i, wf in enumerate(warp_factors):
-        WofAllPass, HofAllPass = signal.freqz([-wf, 1.0], [1.0, -wf])
+        
+        WofAllPass, HofAllPass = signal.freqz([-wf, 1.0], [1.0, -wf], 4096)
         HofAllPassdB=20 * np.log10(abs(HofAllPass))
         AnglesofAllPass = np.unwrap(np.angle(HofAllPass))
-        AllPassSys=signal.TransferFunction([-wf, 1.0], [1.0, -wf])
-        AllPassZeros=AllPassSys.zeros
-        AllPassPoles=AllPassSys.poles
-        print(AllPassZeros)
-        print(AllPassPoles)
+        allpassflag=data["value7"]
+        print(allpassflag)
+        if(allpassflag==1):
+            phi=np.add(phi, AnglesofAllPass)
+            print(phi)
+        #print(AnglesofAllPass)
+        #ALlPass old Trial##############################################
+        #AllPassSys=signal.TransferFunction([-wf, 1.0], [1.0, -wf])
+        #AllPassZeros=AllPassSys.zeros
+        #AllPassPoles=AllPassSys.poles
+        #print(AllPassZeros)
+        #print(AllPassPoles)
+        ############################################################
         #dividenumber=len(InputSignal)/PointsNumber
         #InputSignalDivided = np.array_split(InputSignal, dividenumber)
         #TimeDivided= np.array_split(time, dividenumber)
@@ -126,13 +135,13 @@ def echo(sock):
         #print(EnteredSignal)
         FilteredSignal = signal.lfilter(b, a, EnteredSignal)
 
-        FilteredSignalAllPass  = signal.lfilter([-wf, 1.0], [1.0, -wf], phi)
+        #FilteredSignalAllPass  = signal.lfilter([-wf, 1.0], [1.0, -wf], phi)
         for i in range(0,len(FilteredSignal)):
             x["RealFiltered"].append(FilteredSignal[i].real)
             x["ImagineryFiltered"].append(FilteredSignal[i].imag)
-        for i in range(0,len(FilteredSignalAllPass)):
-            x["RealFilteredAllPass"].append(FilteredSignalAllPass[i].real)
-            x["ImaginaryFilteredAllPass"].append(FilteredSignalAllPass[i].imag)
+        #for i in range(0,len(FilteredSignalAllPass)):
+        #    x["RealFilteredAllPass"].append(FilteredSignalAllPass[i].real)
+        #    x["ImaginaryFilteredAllPass"].append(FilteredSignalAllPass[i].imag)
 
 
 
@@ -157,7 +166,7 @@ def echo(sock):
 
         #print(x)
         #try:
-        datasenttosite = json.dumps(x,indent = 12)
+        datasenttosite = json.dumps(x, indent=12)
             #print("data",x)
 
         sock.send(datasenttosite)

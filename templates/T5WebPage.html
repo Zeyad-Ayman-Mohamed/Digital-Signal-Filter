@@ -55,9 +55,12 @@
         </optgroup>
       </select>
       
-      <label for="AnotherAllPass" style = "position:relative; left:-225px; top:0px">Or Enter Another:</label>
+      <label for="AnotherAllPass" style = "position:relative; left:-225px; top:0px">Enter Custom AllPass:</label>
       <input style = "position:relative; left:-225px; top:0px" type="text" id="AnotherAllPass" name="AnotherAllPass">
-      <button onclick="ApplyAllPass()" style = "position:relative; left:-520px; top:100px" >Apply</button>
+      <button onclick="DrawAllPassByValue(0.2)" style = "position:relative; left:-520px; top:100px" > a = 0.2</button>
+      <button onclick="DrawAllPassByValue(0.7)" style = "position:relative; left:-520px; top:100px" > a = 0.7</button>
+      <button onclick="DrawAllPassByValue(-0.5)" style = "position:relative; left:-520px; top:100px" > a = 0.5</button>
+      <button onclick="DrawAllPassCustomValue()" style = "position:relative;  left:-520px; top:100px" > Draw Custom</button>
       <button> </button>
 
       <canvas id="chartJSContainerAllPass" style="height: 500px; width: 800px;"></canvas>
@@ -109,8 +112,9 @@
       var AllPassFlag=0
       var Alpha=0.5
       var NumberOfPoints=10
-      var AlphaToSend = 0
+      var AlphaToSend = 0.2
       var PointsToSend = 10
+      var AlphaArray=[]
 
 
       
@@ -160,26 +164,38 @@
     OutputX=time
     AllPassX=w_allpass
     AllPassY=phi_allpass
-    console.log(w)
-    console.log(Hdb)
+    //console.log(w)
+    //console.log(Hdb)
     MagnitudeandPhaseDraw()
+    DrawAllPass()
     if(InputFlag==1){
       InputandOutputDraw()
     }
+    
     //DrawAllPass()
      
     });
-    function ApplyAllPass(){
-         //Alpha = document.getElementById("AnotherAllPass").value;
+    function DrawAllPassCustomValue(){
+         Alpha = document.getElementById("AnotherAllPass").value;
          //DrawAllPass()
-        //if (Alpha==""){
-          //Alpha = document.getElementById("AllPass").value;
+        if (Alpha==""){
+          Alpha = 0
          // DrawAllPass()
-        //}
-        //console.log(Alpha)
-        //AlphaToSend=parseInt(Alpha)
-        AlphaToSend=0.7
-        SendFlag()
+       }
+        
+        AlphaToSend=parseFloat(Alpha)
+      
+        console.log(AlphaToSend)
+        DrawAllPassByValue(AlphaToSend)
+      }
+      function DrawAllPassByValue(a){
+        AlphaToSend= a
+        console.log(AlphaToSend)
+        if(AlphaArray.length==0){
+          AlphaArray.push(a)
+        }
+       
+        SendAlpha()        //console.log(AlphaToSend)
         DrawAllPass()
       }
       function ApplyNumberOfPoints(){
@@ -404,7 +420,11 @@ function SendDataToPython(){
       type5:"alpha",
       value5:AlphaToSend,
       type6:"points",
-      value6:PointsToSend
+      value6:PointsToSend,
+      type7:"allpas_flag",
+      value7:0,
+      type8:"alpha_array",
+      value8:AlphaArray
 
 
     })
@@ -429,7 +449,11 @@ function SendFlag(){
       type5:"alpha",
       value5:AlphaToSend,
       type6:"points",
-      value6:PointsToSend
+      value6:PointsToSend,
+      type7:"allpas_flag",
+      value7:0,
+      type8:"alpha_array",
+      value8:AlphaArray
 
     })
     InputFlag=1
@@ -441,12 +465,27 @@ function SendAlpha(){
   
   let ZerosandPolesdata = JSON.stringify({
       
+    type: "zeros",
+      value: ZeroesPositions,
+      type2:"poles",
+      value2:PolePositions,
+      type3:"a",
+      value3:PolePositions,
+      type4:"flag",
+      value4:1,
       type5:"alpha",
       value5:AlphaToSend,
+      type6:"points",
+      value6:PointsToSend,
+      type7:"allpas_flag",
+      value7:1,
+      type8:"alpha_array",
+      value8:AlphaArray
+
       
 
     })
-    InputFlag=1
+    AllPassFlag=1
     socket.send(ZerosandPolesdata)
   
     
