@@ -61,6 +61,7 @@
       <button onclick="DrawAllPassByValue(0.7)" style = "position:relative; left:-520px; top:100px" > a = 0.7</button>
       <button onclick="DrawAllPassByValue(-0.5)" style = "position:relative; left:-520px; top:100px" > a = 0.5</button>
       <button onclick="DrawAllPassCustomValue()" style = "position:relative;  left:-520px; top:100px" > Draw Custom</button>
+      <button onclick="ApplyAll()" style = "position:relative;  left:-520px; top:100px" > Apply all filters</button>
       <button> </button>
 
       <canvas id="chartJSContainerAllPass" style="height: 500px; width: 800px;"></canvas>
@@ -115,6 +116,7 @@
       var AlphaToSend = 0.2
       var PointsToSend = 10
       var AlphaArray=[]
+      var ApplyAllFlag =0
 
 
       
@@ -196,6 +198,10 @@
         }
        
         SendAlpha()        //console.log(AlphaToSend)
+        DrawAllPass()
+      }
+      function ApplyAll(){
+        sendApplyAll()
         DrawAllPass()
       }
       function ApplyNumberOfPoints(){
@@ -424,7 +430,9 @@ function SendDataToPython(){
       type7:"allpas_flag",
       value7:0,
       type8:"alpha_array",
-      value8:AlphaArray
+      value8:AlphaArray,
+      type9:"apply_all",
+      value9:0
 
 
     })
@@ -453,7 +461,9 @@ function SendFlag(){
       type7:"allpas_flag",
       value7:0,
       type8:"alpha_array",
-      value8:AlphaArray
+      value8:AlphaArray,
+      type9:"apply_all",
+      value9:0
 
     })
     InputFlag=1
@@ -472,7 +482,7 @@ function SendAlpha(){
       type3:"a",
       value3:PolePositions,
       type4:"flag",
-      value4:1,
+      value4:0,
       type5:"alpha",
       value5:AlphaToSend,
       type6:"points",
@@ -480,7 +490,9 @@ function SendAlpha(){
       type7:"allpas_flag",
       value7:1,
       type8:"alpha_array",
-      value8:AlphaArray
+      value8:AlphaArray,
+      type9:"apply_all",
+      value9:0
 
       
 
@@ -489,6 +501,34 @@ function SendAlpha(){
     socket.send(ZerosandPolesdata)
   
     
+}
+function sendApplyAll(){
+  let ZerosandPolesdata = JSON.stringify({
+      
+      type: "zeros",
+        value: ZeroesPositions,
+        type2:"poles",
+        value2:PolePositions,
+        type3:"a",
+        value3:PolePositions,
+        type4:"flag",
+        value4:0,
+        type5:"alpha",
+        value5:AlphaToSend,
+        type6:"points",
+        value6:PointsToSend,
+        type7:"allpas_flag",
+        value7:0,
+        type8:"alpha_array",
+        value8:AlphaArray,
+        type9:"apply_all",
+        value9:1
+  
+        
+  
+      })
+      ApplyAllFlag=1
+      socket.send(ZerosandPolesdata)
 }
 function PrintZeroes(){
   for(var i= 0; i<ZeroesPositions.length;i++) {
@@ -504,6 +544,7 @@ function ClearAll(){
               PolePositions=[]
               ZeroesPositions=[]
             window.test.update()
+            SendDataToPython()
         }
 function DeleteSelected(){
   var polezeroflag=0
@@ -538,6 +579,7 @@ function DeleteSelected(){
     }
   }
   ToBeDeletedIndexInDataset=-1
+  SendDataToPython()
 }
 
 function ClearAllZeroes(){
@@ -550,7 +592,9 @@ function ClearAllZeroes(){
         }
         }
       }
+      SendDataToPython()
     window.test.update()
+
 }
 
 function ClearAllPoles(){
@@ -563,6 +607,7 @@ function ClearAllPoles(){
         }
         }
       }
+      SendDataToPython()
     window.test.update()
 }
 
@@ -578,7 +623,9 @@ function ClearAllPoles(){
                 ZeroesPositions[i][2]-=1
               }
             }
+            SendDataToPython()
             window.test.update()
+            
         }
 
         function RemoveZero(ZeroIndexInZeroPositionArray){
@@ -594,6 +641,7 @@ function ClearAllPoles(){
                 PolePositions[i][2]-=1
               }
             }
+            SendDataToPython()
             window.test.update()
         }
         
@@ -633,8 +681,10 @@ function ClearAllPoles(){
             options.data.datasets[options.data.datasets.length-1].pointStyle='bubble'
             window.test.update()
             ZeroesPositions.push([ZeroesPositions[i][0],-1*ZeroesPositions[i][1],options.data.datasets.length-1])
+            SendDataToPython()
           }
         }
+
         }
 
         function DeleteConjugates(){
@@ -653,6 +703,7 @@ function ClearAllPoles(){
               }
             }
           }
+          SendDataToPython()
         }
 
         function AddBubble(){

@@ -104,15 +104,37 @@ def echo(sock):
         print("phi original",phi)
         #warp_factors=np.linspace(-0.99, 0.99, 5)
         #for i, wf in enumerate(warp_factors):
-        
+
         WofAllPass, HofAllPass = signal.freqz([-wf, 1.0], [1.0, -wf], 4096)
         HofAllPassdB=20 * np.log10(abs(HofAllPass))
         AnglesofAllPass = np.unwrap(np.angle(HofAllPass))
+
+        WofAllPass1, HofAllPass1 = signal.freqz([-0.2, 1.0], [1.0, -0.2], 4096)
+        HofAllPassdB1 = 20 * np.log10(abs(HofAllPass))
+        AnglesofAllPass1 = np.unwrap(np.angle(HofAllPass))
+
+        WofAllPass2, HofAllPass2 = signal.freqz([-0.7, 1.0], [1.0, -0.7], 4096)
+        HofAllPassdB2 = 20 * np.log10(abs(HofAllPass))
+        AnglesofAllPass2 = np.unwrap(np.angle(HofAllPass))
+
+        WofAllPass3, HofAllPass3 = signal.freqz([--0.5, 1.0], [1.0, --0.5], 4096)
+        HofAllPassdB3 = 20 * np.log10(abs(HofAllPass))
+        AnglesofAllPass3 = np.unwrap(np.angle(HofAllPass))
+
+        answer = np.add(AnglesofAllPass1, AnglesofAllPass2)
+        answer1 = np.add(answer, AnglesofAllPass3)
         allpassflag=data["value7"]
+        applyallflag=data["value9"]
         print(allpassflag)
+        print(applyallflag)
         if(allpassflag==1):
             phi=np.add(phi, AnglesofAllPass)
             print(phi)
+        if(applyallflag==1):
+            phi = np.add(phi, answer1)
+            x["phi_allpass"]=answer1
+            print(phi)
+
         #print(AnglesofAllPass)
         #ALlPass old Trial##############################################
         #AllPassSys=signal.TransferFunction([-wf, 1.0], [1.0, -wf])
