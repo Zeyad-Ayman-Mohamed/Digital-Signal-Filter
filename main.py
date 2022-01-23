@@ -40,7 +40,8 @@ datatosite={
             "RealFilteredAllPass":[],
             "ImaginaryFilteredAllPass" :[],
             "Time":[],
-             "InputSignal":[]
+            "InputSignal":[],
+            "PhiNew":[]
 
 
 
@@ -61,6 +62,8 @@ global EnteredSignal
 global EnteredTime
 EnteredSignal=InputSignal[start:start+PointsNumber]
 EnteredTime=time[start:start+PointsNumber]
+PhiNew=np.zeros(100)
+
 @app.route('/')
 def index():
     return render_template('T5WebPage.html')
@@ -76,6 +79,7 @@ def echo(sock):
         global start
         global EnteredSignal
         global EnteredTime
+        global PhiNew
 
         zerosfromsite=data["value"]
         polesfromsite=data["value2"]
@@ -95,7 +99,7 @@ def echo(sock):
         system = system.to_tf()
         a = system.den
         b = system.num
-        w, H = freqz(b, a, 4096)  # Calculate the frequency response
+        w, H = freqz(b, a, 100)  # Calculate the frequency response
         w *= f_s / (2 * pi)  # Convert from rad/sample to Hz
         H_dB = 20 * np.log10(abs(H))
         phi = np.angle(H)  # Argument of H
@@ -105,35 +109,45 @@ def echo(sock):
         #warp_factors=np.linspace(-0.99, 0.99, 5)
         #for i, wf in enumerate(warp_factors):
 
-        WofAllPass, HofAllPass = signal.freqz([-wf, 1.0], [1.0, -wf], 4096)
+        WofAllPass, HofAllPass = signal.freqz([-wf, 1.0], [1.0, -wf], 100)
         HofAllPassdB=20 * np.log10(abs(HofAllPass))
         AnglesofAllPass = np.unwrap(np.angle(HofAllPass))
+        print("a is",wf)
+        print("Angle of allpass",AnglesofAllPass)
 
-        WofAllPass1, HofAllPass1 = signal.freqz([-0.2, 1.0], [1.0, -0.2], 4096)
+        WofAllPass1, HofAllPass1 = signal.freqz([-0.2, 1.0], [1.0, -0.2], 100)
         HofAllPassdB1 = 20 * np.log10(abs(HofAllPass))
         AnglesofAllPass1 = np.unwrap(np.angle(HofAllPass))
+        print("Angle of 0.2",AnglesofAllPass1)
 
-        WofAllPass2, HofAllPass2 = signal.freqz([-0.7, 1.0], [1.0, -0.7], 4096)
+        WofAllPass2, HofAllPass2 = signal.freqz([-0.7, 1.0], [1.0, -0.7], 100)
         HofAllPassdB2 = 20 * np.log10(abs(HofAllPass))
         AnglesofAllPass2 = np.unwrap(np.angle(HofAllPass))
+        print("Angle of 0.7",AnglesofAllPass2)
 
-        WofAllPass3, HofAllPass3 = signal.freqz([--0.5, 1.0], [1.0, --0.5], 4096)
+        WofAllPass3, HofAllPass3 = signal.freqz([--0.5, 1.0], [1.0, --0.5], 100)
         HofAllPassdB3 = 20 * np.log10(abs(HofAllPass))
         AnglesofAllPass3 = np.unwrap(np.angle(HofAllPass))
-
+        print("Angle of -0.5",AnglesofAllPass3)
         answer = np.add(AnglesofAllPass1, AnglesofAllPass2)
         answer1 = np.add(answer, AnglesofAllPass3)
         allpassflag=data["value7"]
         applyallflag=data["value9"]
         print(allpassflag)
         print(applyallflag)
+        #PhiNew = np.add(PhiNew, AnglesofAllPass)
+        #PhiNew = np.add(phi, PhiNew)
         if(allpassflag==1):
-            phi=np.add(phi, AnglesofAllPass)
-            print(phi)
+            PhiNew=np.add(PhiNew, AnglesofAllPass)
+            PhiNew = np.add(phi, PhiNew)
+            #x["phi"] = PhiNew
+            #print("Phi new",PhiNew)
+
+            #print("phi new",phi)
         if(applyallflag==1):
             phi = np.add(phi, answer1)
             x["phi_allpass"]=answer1
-            print(phi)
+            #print(phi)
 
         #print(AnglesofAllPass)
         #ALlPass old Trial##############################################
@@ -176,12 +190,18 @@ def echo(sock):
         #print("high")
         x["w"]=w.tolist()
         x["H_dB"]=H_dB.tolist()
-        x["phi"]=phi.tolist()
+        if(allpassflag==1):
+            x["phi"] = PhiNew.tolist()
+        else:
+            x["phi"] = phi.tolist()
+
+
         x["w_allpass"] = WofAllPass.tolist()
         x["H_dB_allpass"] = HofAllPassdB.tolist()
         x["phi_allpass"] = AnglesofAllPass.tolist()
         x["Time"]=EnteredTime
         x["InputSignal"]=EnteredSignal.tolist()
+        x["PhiNew"]=PhiNew.tolist()
         #x["FilterdSignal"] =FilteredSignal.tolist()
         #x["FilteredSignalAllPass"] =FilteredSignalAllPass.tolist()
         #x["Time"] =TimeDivided.tolist()

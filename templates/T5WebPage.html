@@ -113,7 +113,7 @@
       var AllPassFlag=0
       var Alpha=0.5
       var NumberOfPoints=10
-      var AlphaToSend = 0.2
+      var AlphaToSend = 0
       var PointsToSend = 10
       var AlphaArray=[]
       var ApplyAllFlag =0
@@ -144,6 +144,7 @@
     var FilteredAllPassImag=[]
     var time=[]
     var input=[]
+    var PhiNew=[]
     w=obj["w"]
     Hdb=obj["H_dB"]
     phi=obj["phi"]
@@ -156,6 +157,7 @@
     FilteredAllPassImag=obj["ImaginaryFilteredAllPass"]
     time=obj["Time"]
     input=obj["InputSignal"]
+    PhiNew=obj["PhiNew"]
     FilterMagY=Hdb
     FilterMagX=w
     FilterPhaseY=phi
@@ -168,12 +170,18 @@
     AllPassY=phi_allpass
     //console.log(w)
     //console.log(Hdb)
+    console.log(AlphaToSend)
+    console.log(phi)
+    console.log("Phi New",PhiNew)
+    console.log(AllPassFlag)
     MagnitudeandPhaseDraw()
     DrawAllPass()
     if(InputFlag==1){
       InputandOutputDraw()
     }
-    
+    //if(AllPassFlag==1){
+      //FilterPhaseY=PhiNew
+    //}
     //DrawAllPass()
      
     });
@@ -197,7 +205,8 @@
           AlphaArray.push(a)
         }
        
-        SendAlpha()        //console.log(AlphaToSend)
+        SendAlpha()
+        AllPassFlag=1        //console.log(AlphaToSend)
         DrawAllPass()
       }
       function ApplyAll(){
@@ -369,6 +378,7 @@
         }]
     }
     window.testAllPass.update()
+    
       }
   function circle(radius, steps, centerX, centerY){
     var xValues = [centerX];
