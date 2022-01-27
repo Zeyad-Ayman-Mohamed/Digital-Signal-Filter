@@ -61,7 +61,7 @@
       <button onclick="DrawAllPassByValue(0.7)" style = "position:relative; left:-520px; top:100px" > a = 0.7</button>
       <button onclick="DrawAllPassByValue(-0.5)" style = "position:relative; left:-520px; top:100px" > a = 0.5</button>
       <button onclick="DrawAllPassCustomValue()" style = "position:relative;  left:-520px; top:100px" > Draw Custom</button>
-      <button onclick="ApplyAll()" style = "position:relative;  left:-520px; top:100px" > Apply all filters</button>
+      <button onclick="ApplyAll()" style = "position:relative;  left:-520px; top:100px" > Apply Individually</button>
       <button> </button>
 
       <canvas id="chartJSContainerAllPass" style="height: 500px; width: 800px;"></canvas>
@@ -172,7 +172,7 @@
     //console.log(Hdb)
     console.log(AlphaToSend)
     console.log(phi)
-    console.log("Phi New",PhiNew)
+    //console.log("Phi New",PhiNew)
     console.log(AllPassFlag)
     MagnitudeandPhaseDraw()
     DrawAllPass()
@@ -210,6 +210,13 @@
         DrawAllPass()
       }
       function ApplyAll(){
+        if(ApplyAllFlag==0){
+          ApplyAllFlag=1
+        }
+        else 
+          ApplyAllFlag=0
+       
+         
         sendApplyAll()
         DrawAllPass()
       }
@@ -220,7 +227,7 @@
       }
       function StartDrwaing(){
         InputFlag=1
-        setInterval(SendFlag,1)
+        setInterval(SendFlag,300)
       }
       function SwitchConjugates(){
         if (ConjugateFlag ==0){
@@ -502,7 +509,7 @@ function SendAlpha(){
       type8:"alpha_array",
       value8:AlphaArray,
       type9:"apply_all",
-      value9:0
+      value9:ApplyAllFlag
 
       
 
@@ -532,12 +539,12 @@ function sendApplyAll(){
         type8:"alpha_array",
         value8:AlphaArray,
         type9:"apply_all",
-        value9:1
+        value9:ApplyAllFlag
   
         
   
       })
-      ApplyAllFlag=1
+      //ApplyAllFlag=1
       socket.send(ZerosandPolesdata)
 }
 function PrintZeroes(){

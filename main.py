@@ -137,7 +137,7 @@ def echo(sock):
         print(applyallflag)
         #PhiNew = np.add(PhiNew, AnglesofAllPass)
         #PhiNew = np.add(phi, PhiNew)
-        if(allpassflag==1):
+        if(allpassflag==1 and applyallflag==0):
             PhiNew=np.add(PhiNew, AnglesofAllPass)
             PhiNew = np.add(phi, PhiNew)
             #x["phi"] = PhiNew
@@ -145,8 +145,10 @@ def echo(sock):
 
             #print("phi new",phi)
         if(applyallflag==1):
-            phi = np.add(phi, answer1)
-            x["phi_allpass"]=answer1
+            #phi = np.add(phi, answer1)
+            #x["phi_allpass"]=answer1
+            #print(phi)
+            phi = np.add(phi, AnglesofAllPass)
             #print(phi)
 
         #print(AnglesofAllPass)
@@ -190,7 +192,7 @@ def echo(sock):
         #print("high")
         x["w"]=w.tolist()
         x["H_dB"]=H_dB.tolist()
-        if(allpassflag==1):
+        if(allpassflag==1 and applyallflag==0):
             x["phi"] = PhiNew.tolist()
         else:
             x["phi"] = phi.tolist()
