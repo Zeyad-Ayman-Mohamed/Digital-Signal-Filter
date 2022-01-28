@@ -28,7 +28,7 @@
     </style>
   </head>
   <body>
-    <h1>Z Plot</h1>
+    <h1>Digital Filter</h1>
     <div style = "position:relative; left:-500px; top:500px;">
     <canvas id="chartJSContainer" style="height: 600px; width: 600px;"></canvas>
     </div>
@@ -57,9 +57,9 @@
       
       <label for="AnotherAllPass" style = "position:relative; left:-225px; top:0px">Enter Custom AllPass:</label>
       <input style = "position:relative; left:-225px; top:0px" type="text" id="AnotherAllPass" name="AnotherAllPass">
-      <button onclick="DrawAllPassByValue(0.2)" style = "position:relative; left:-520px; top:100px" > a = 0.2</button>
-      <button onclick="DrawAllPassByValue(0.7)" style = "position:relative; left:-520px; top:100px" > a = 0.7</button>
-      <button onclick="DrawAllPassByValue(-0.5)" style = "position:relative; left:-520px; top:100px" > a = 0.5</button>
+      <button onclick="DrawAllPassByValue(0.2,3)" style = "position:relative; left:-520px; top:100px" > a = 0.2+3i</button>
+      <button onclick="DrawAllPassByValue(0.7,0)" style = "position:relative; left:-520px; top:100px" > a = 0.7</button>
+      <button onclick="DrawAllPassByValue(-0.5,0)" style = "position:relative; left:-520px; top:100px" > a = 0.5</button>
       <button onclick="DrawAllPassCustomValue()" style = "position:relative;  left:-520px; top:100px" > Draw Custom</button>
       <button onclick="ApplyAll()" style = "position:relative;  left:-520px; top:100px" > Apply Individually</button>
       <button> </button>
@@ -117,6 +117,7 @@
       var PointsToSend = 10
       var AlphaArray=[]
       var ApplyAllFlag =0
+      var ComplexToSend =0
 
 
       
@@ -198,12 +199,13 @@
         console.log(AlphaToSend)
         DrawAllPassByValue(AlphaToSend)
       }
-      function DrawAllPassByValue(a){
+      function DrawAllPassByValue(a,c){
         AlphaToSend= a
+        ComplexToSend=c
         console.log(AlphaToSend)
-        if(AlphaArray.length==0){
-          AlphaArray.push(a)
-        }
+        //if(AlphaArray.length==0){
+          //AlphaArray.push(a)
+        //}
        
         SendAlpha()
         AllPassFlag=1        //console.log(AlphaToSend)
@@ -227,7 +229,7 @@
       }
       function StartDrwaing(){
         InputFlag=1
-        setInterval(SendFlag,300)
+        setInterval(SendFlag,1000)
       }
       function SwitchConjugates(){
         if (ConjugateFlag ==0){
@@ -362,7 +364,7 @@
         labels: AllPassX,//x axis array
         datasets: [
         {
-            label: "Magnitude ",
+            label: "AllPass ",
             fill: false,
             lineTension: 0.1,
             backgroundColor: "rgba(75,192,192,0.4)",
@@ -449,7 +451,9 @@ function SendDataToPython(){
       type8:"alpha_array",
       value8:AlphaArray,
       type9:"apply_all",
-      value9:0
+      value9:0,
+      type10:"complex",
+      value10:ComplexToSend
 
 
     })
@@ -480,7 +484,9 @@ function SendFlag(){
       type8:"alpha_array",
       value8:AlphaArray,
       type9:"apply_all",
-      value9:0
+      value9:0,
+      type10:"complex",
+      value10:ComplexToSend
 
     })
     InputFlag=1
@@ -509,7 +515,9 @@ function SendAlpha(){
       type8:"alpha_array",
       value8:AlphaArray,
       type9:"apply_all",
-      value9:ApplyAllFlag
+      value9:ApplyAllFlag,
+      type10:"complex",
+      value10:ComplexToSend
 
       
 
@@ -539,7 +547,9 @@ function sendApplyAll(){
         type8:"alpha_array",
         value8:AlphaArray,
         type9:"apply_all",
-        value9:ApplyAllFlag
+        value9:ApplyAllFlag,
+        type10:"complex",
+        value10:ComplexToSend
   
         
   

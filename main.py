@@ -63,6 +63,7 @@ global EnteredTime
 EnteredSignal=InputSignal[start:start+PointsNumber]
 EnteredTime=time[start:start+PointsNumber]
 PhiNew=np.zeros(100)
+c=0
 
 @app.route('/')
 def index():
@@ -86,6 +87,8 @@ def echo(sock):
 
         wf=data["value5"]
         PointsNumber=data["value6"]
+        c=data["value10"]
+        wf=complex(wf,c)
         #print(wf)
         #print("poles",polesfromsite)
         f_s=360
