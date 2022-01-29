@@ -43,32 +43,25 @@
 
     <div style = "position:relative; left:200px; top:1175px;" >
       
-      <label for="AllPass" style = "position:relative; left:0px; top:-100px">Choose an All-Pass Filter:</label>
-      <select style = "position:relative; left:-0px; top:-100px" name="AllPass" id="AllPass">
-        <optgroup label="alpha= ">
-          <option value="0.2">0.2</option>
-          <option value="0.4">0.4</option>
-          <option value="0.6">0.6</option>
-          <option value="0.8">0.8</option>
-          <option value="1">1</option>
-          <option value="2">2</option>
-        </optgroup>
-      </select>
       
-      <label for="AnotherAllPass" style = "position:relative; left:-225px; top:0px">Enter Custom AllPass:</label>
-      <input style = "position:relative; left:-225px; top:0px" type="text" id="AnotherAllPass" name="AnotherAllPass">
-      <button onclick="DrawAllPassByValue(0.2,3)" style = "position:relative; left:-520px; top:100px" > a = 0.2+3i</button>
-      <button onclick="DrawAllPassByValue(0.7,0)" style = "position:relative; left:-520px; top:100px" > a = 0.7</button>
-      <button onclick="DrawAllPassByValue(-0.5,0)" style = "position:relative; left:-520px; top:100px" > a = 0.5</button>
-      <button onclick="DrawAllPassCustomValue()" style = "position:relative;  left:-520px; top:100px" > Draw Custom</button>
-      <button onclick="ApplyAll()" style = "position:relative;  left:-520px; top:100px" > Apply Individually</button>
+      
+      <label for="AnotherAllPass" style = "position:relative; left:-200px; top:-30px">Enter Custom AllPass:</label>
+      <input style = "position:relative; left:-200px; top:-30px" type="text" id="AnotherAllPass" name="AnotherAllPass">
+      <label for="AnotherAllPassComplex" style = "position:relative; left:-500px; top:0px">Enter Custom AllPass Complex:</label>
+      <input style = "position:relative; left:-500px; top:0px" type="text" id="AnotherAllPassComplex" name="AnotherAllPassComplex">
+      <button onclick="DrawAllPassCustomValue()" style = "position:relative;  left:-500px; top:0px" > Draw Custom</button>
+      <button onclick="DrawAllPassByValue(0.2,3)" style = "position:relative; left:-950px; top:100px" > a = 0.2+3i</button>
+      <button onclick="DrawAllPassByValue(0.7,0)" style = "position:relative; left:-950px; top:100px" > a = 0.7</button>
+      <button onclick="DrawAllPassByValue(-0.5,0)" style = "position:relative; left:-950px; top:100px" > a = 0.5</button>
+     
+      <button onclick="ApplyAll()" style = "position:relative;  left:-950px; top:100px" > Apply Individually</button>
       <button> </button>
 
       <canvas id="chartJSContainerAllPass" style="height: 500px; width: 800px;"></canvas>
       </div>
     
-   <div style = "position:relative;left:-450px; top:1800px;" >
-      <canvas id="chartJSContainer3" style="height: 500px; width: 800px;"></canvas>
+   <div style = "position:relative;left:-350px; top:1800px;" >
+      <canvas id="chartJSContainer3" style="height: 500px; width: 700px;"></canvas>
       </div> 
       
       <div style = "position:relative;left:450px; top:1800px;" >
@@ -76,6 +69,7 @@
         <label for="NumberOfPoints" style = "position:relative; left:-300px; top:-300px;" >NumberOfPoints:</label>
         <input  type="text"  style = "position:relative; left:-300px; top:-300px;" id="NumberOfPoints" name="NumberOfPoints">
         <button onclick="ApplyNumberOfPoints()" style = "position:relative; left:-300px; top:-300px;">Apply</button>
+        <button onclick="StartDrwaing()" style = "position:relative; left:-300px; top:-300px;">Start </button>
         </div>
 
         
@@ -89,7 +83,7 @@
     <label for="AddConjugates">AddConjugates</label>
     <button onclick='PrintPoles()'>Print Poles</button>
     <button onclick='PrintZeroes()'>Print Zeroes</button>
-    <button onclick='StartDrwaing()'>Start </button>
+    
 
     <script>
       var AllPassX= [1,2,3,4,5]
@@ -118,6 +112,7 @@
       var AlphaArray=[]
       var ApplyAllFlag =0
       var ComplexToSend =0
+      var AlphaComplex=0
 
 
       
@@ -171,10 +166,10 @@
     AllPassY=phi_allpass
     //console.log(w)
     //console.log(Hdb)
-    console.log(AlphaToSend)
-    console.log(phi)
+    //console.log(AlphaToSend)
+    //console.log(phi)
     //console.log("Phi New",PhiNew)
-    console.log(AllPassFlag)
+    //console.log(AllPassFlag)
     MagnitudeandPhaseDraw()
     DrawAllPass()
     if(InputFlag==1){
@@ -184,20 +179,29 @@
       //FilterPhaseY=PhiNew
     //}
     //DrawAllPass()
+    console.log(InputY)
+    console.log(OutputY)
      
     });
     function DrawAllPassCustomValue(){
          Alpha = document.getElementById("AnotherAllPass").value;
+         AlphaComplex=document.getElementById("AnotherAllPassComplex").value;
          //DrawAllPass()
         if (Alpha==""){
           Alpha = 0
          // DrawAllPass()
        }
+       if (AlphaComplex==""){
+          AlphaComplex = 0
+         // DrawAllPass()
+       }
+       
         
         AlphaToSend=parseFloat(Alpha)
+        ComplexToSend=parseFloat(AlphaComplex)
       
         console.log(AlphaToSend)
-        DrawAllPassByValue(AlphaToSend)
+        DrawAllPassByValue(AlphaToSend,ComplexToSend)
       }
       function DrawAllPassByValue(a,c){
         AlphaToSend= a
@@ -1090,12 +1094,12 @@ function ClearAllPoles(){
     options: {
         animation: false
     ,
-    scales: {
+   /* scales: {
             y: {
                 min: -1,
                 max: 4
             }
-        }},
+        }*/},
     
     data: {
         labels: InputX,

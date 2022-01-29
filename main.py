@@ -49,8 +49,11 @@ datatosite={
         }
 x = datatosite
 loaded_data = pd.read_csv("ECG.csv")
+#loaded_data = pd.read_csv("ECG(1).csv")
 
 InputSignal = loaded_data["filtered_ECG_mV"]
+#InputSignal = loaded_data["amplitude"]
+
 global start
 start=0
 FilteredSignal=[]
@@ -176,10 +179,13 @@ def echo(sock):
         #print(EnteredSignal)
         FilteredSignal = signal.lfilter(b, a, EnteredSignal)
 
+        FilteredSignalReal=[]
+        FilteredSignalReal=FilteredSignal.real
+        x["RealFiltered"]=FilteredSignalReal.tolist()
         #FilteredSignalAllPass  = signal.lfilter([-wf, 1.0], [1.0, -wf], phi)
-        for i in range(0,len(FilteredSignal)):
-            x["RealFiltered"].append(FilteredSignal[i].real)
-            x["ImagineryFiltered"].append(FilteredSignal[i].imag)
+        #for i in range(0,len(FilteredSignal)):
+         #   x["RealFiltered"].append(FilteredSignal[i].real)
+          #  x["ImagineryFiltered"].append(FilteredSignal[i].imag)
         #for i in range(0,len(FilteredSignalAllPass)):
         #    x["RealFilteredAllPass"].append(FilteredSignalAllPass[i].real)
         #    x["ImaginaryFilteredAllPass"].append(FilteredSignalAllPass[i].imag)
